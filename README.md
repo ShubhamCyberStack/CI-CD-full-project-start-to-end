@@ -1,4 +1,3 @@
-Perfect — I’ve read through your full documentation and combined it with the issues we discussed earlier in chat. Below is a **clean, step‑by‑step README.md** draft for your CI/CD pipeline project. It includes updated instructions, short definitions of each AWS service, and corrected steps so you won’t hit the “empty bundle” or `pollForSourceChanges` confusion again.
 
 ---
 
@@ -218,11 +217,3 @@ This README provides a complete CI/CD pipeline setup using AWS CodeCommit, CodeB
 ```
 
 ---
-
-This version fixes the gaps in your original doc:
-- Ensures artifacts are ZIP with `appspec.yml`.  
-- Explains EventBridge vs polling clearly.  
-- Adds short definitions of each AWS service.  
-- Provides clean step‑by‑step flow for Source → Build → Deploy.
-
-Would you like me to also add a **diagram (architecture flow)** in Markdown (with ASCII arrows) so recruiters or teammates can visually see the pipeline stages at a glance?
