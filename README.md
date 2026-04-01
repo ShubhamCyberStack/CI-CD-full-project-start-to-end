@@ -217,3 +217,96 @@ This README provides a complete CI/CD pipeline setup using AWS CodeCommit, CodeB
 ```
 
 ---
+
+
+---
+
+## 📖 IAM Roles and Policies – Complete Guide
+
+### 1. **IAM User for Git Access**
+- **Purpose**: To authenticate your Ubuntu VM with CodeCommit so you can push/pull code.  
+- **Steps**:
+  1. In IAM → Users → Create user (`devops-shubham`).  
+  2. Generate **Access Key** (since HTTPS Git credentials are discontinued).  
+  3. Attach policy: `AWSCodeCommitPowerUser`.  
+  4. Configure on VM:
+     ```bash
+     aws configure
+     git config --global credential.helper '!aws codecommit credential-helper $@'
+     git config --global credential.UseHttpPath true
+     ```
+- **Usage**: This user’s credentials are used by Git on your VM to interact with CodeCommit.
+
+---
+
+### 2. **CodeBuild Service Role**
+- **Purpose**: Allows CodeBuild to pull source code from CodeCommit and push build artifacts to S3.  
+- **Steps**:
+  1. In IAM → Roles → Create role → Trusted entity = CodeBuild.  
+  2. Attach policies:
+     - `AWSCodeCommitReadOnly` → lets CodeBuild read your repo.  
+     - `AmazonS3FullAccess` (or scoped S3 bucket policy) → lets CodeBuild upload artifacts.  
+  3. Name it: `codebuild-demo-apk-build-service-role`.  
+- **Usage**: This role is automatically assumed by CodeBuild during pipeline execution.
+
+---
+
+### 3. **CodeDeploy Service Role**
+- **Purpose**: Allows CodePipeline/CodeDeploy to manage deployments to EC2.  
+- **Steps**:
+  1. In IAM → Roles → Create role → Trusted entity = CodeDeploy.  
+  2. Attach policy:
+     - `AWSCodeDeployRole` (new consolidated policy).  
+     - Older alternative: `AmazonEC2RoleforAWSCodeDeploy`.  
+  3. Name it: `code-deploy-service-role`.  
+- **Usage**: This role is linked to your **Deployment Group** in CodeDeploy. It authorizes CodeDeploy to send deployment instructions to EC2.
+
+---
+
+### 4. **EC2 Instance Role**
+- **Purpose**: Allows the EC2 instance itself (where CodeDeploy agent runs) to fetch artifacts from S3 and talk to CodeDeploy.  
+- **Steps**:
+  1. In IAM → Roles → Create role → Trusted entity = EC2.  
+  2. Attach policies:
+     - `AmazonEC2RoleforAWSCodeDeploy` → lets EC2 agent communicate with CodeDeploy.  
+     - `AmazonS3ReadOnlyAccess` → lets EC2 download artifacts from S3.  
+  3. Name it: `EC2CodeDeployInstanceRole`.  
+  4. Attach to EC2:
+     - Go to EC2 console → Instances → Select instance → Actions → Security → Modify IAM role → Select `EC2CodeDeployInstanceRole`.  
+- **Usage**: The CodeDeploy agent on EC2 uses this role to authenticate and pull deployment bundles from S3.
+
+---
+
+### 5. **Pipeline Service Role**
+- **Purpose**: Allows CodePipeline itself to orchestrate actions across CodeCommit, CodeBuild, and CodeDeploy.  
+- **Steps**:
+  1. In IAM → Roles → Create role → Trusted entity = CodePipeline.  
+  2. Attach policies:
+     - `AWSCodePipelineServiceRole` (managed policy).  
+     - Plus inline permissions for S3 bucket access if needed.  
+  3. Name it: `demo-apk-pipeline-role`.  
+- **Usage**: This role is assigned when you create the pipeline. It lets CodePipeline trigger builds and deployments.
+
+---
+
+## 🔗 How They Work Together
+
+Here’s the flow:
+
+1. **Developer (IAM User)** → Pushes code to CodeCommit using `devops-shubham` credentials.  
+2. **CodePipeline Service Role** → Detects commit (via EventBridge) and starts pipeline.  
+3. **CodeBuild Service Role** → Pulls source from CodeCommit, builds, uploads `artifacts.zip` to S3.  
+4. **CodeDeploy Service Role** → Orchestrates deployment, instructs EC2 to fetch artifact.  
+5. **EC2 Instance Role** → EC2 agent uses this role to download artifact from S3 and apply deployment.
+
+---
+
+## ✅ Checklist
+
+- IAM User (`devops-shubham`) → Git access.  
+- CodeBuild Role → Repo + S3 access.  
+- CodeDeploy Role → Deployment orchestration.  
+- EC2 Instance Role → Fetch artifacts + talk to CodeDeploy.  
+- Pipeline Role → Orchestration across all services.  
+
+---
