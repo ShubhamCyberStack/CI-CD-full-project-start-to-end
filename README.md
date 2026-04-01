@@ -211,9 +211,6 @@ git push origin master
 - **IAM roles** must have correct policies for S3, CodeDeploy, and CodeCommit.
 
 ---
-
-# 🚀 Conclusion
-This README provides a complete CI/CD pipeline setup using AWS CodeCommit, CodeBuild, CodeDeploy, and EC2. With EventBridge enabled, every commit automatically updates your website.
 ```
 
 ---
